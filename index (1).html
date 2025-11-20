@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- CHANGED: Added user-scalable=no to prevent zooming controls -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EcoSort AI Pro</title>
+    <style>
+        /* --- CSS STYLING --- */
+        :root {
+            /* Base Colors */
+            --primary: #10b981; /* Green */
+            --secondary: #3b82f6; /* Blue */
+            --accent: #8b5cf6; /* Purple for Quantum */
+            --gold: #f59e0b;    /* Gold for Points */
+            --danger: #ef4444;  /* Red for Hazardous */
+            
+            /* Theme Variables (Default Light) */
+            --bg-main: #f3f4f6;
+            --bg-card: #ffffff;
+            --bg-input: #f9fafb;
+            --text-main: #1f2937;
+            --text-muted: #666666;
+            --border-color: #e5e7eb;
+            --nav-bg: #ffffff;
+        }
+
+        /* DARK MODE OVERRIDES */
+        [data-theme="dark"] {
+            --bg-main: #111827;
+            --bg-card: #1f2937;
+            --bg-input: #374151;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+            --nav-bg: #1f2937;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* --- APP CONTAINER --- */
+        #app-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 90px; /* Increased bottom padding for larger nav */
+        }
+
+        /* --- SCREENS --- */
+        .screen { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .screen.active { display: block; }
+
+        /* --- HEADER --- */
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 20px;
+            border-radius: 0 0 20px 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin: -20px -20px 20px -20px;
+            position: relative; /* For positioning toggle */
+        }
+        .header h1 { margin: 0; font-size: 28px; } /* Increased */
+        .header p { margin: 5px 0 0; font-size: 16px; opacity: 0.9; } /* Increased */
+
+        /* THEME TOGGLE BUTTON */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 40px; /* Increased touch target */
+            height: 40px; /* Increased touch target */
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px; /* Increased */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .theme-toggle:hover { background: rgba(255,255,255,0.4); }
+
+        /* --- HOME SCREEN --- */
+        .home-hero { text-align: center; margin-top: 20px; }
+        
+        .score-board {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 2px solid var(--gold);
+        }
+        .score-val { font-size: 28px; font-weight: bold; color: var(--gold); } /* Increased */
+        
+        /* DYNAMIC CHALLENGE BAR */
+        .daily-challenge-box {
+            background: rgba(16, 185, 129, 0.1); /* Slight tint of primary */
+            border: 1px dashed var(--primary);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+            text-align: left;
+        }
+        .mission-item {
+            background: var(--bg-card);
+            padding: 12px; /* Increased padding */
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            border-left: 4px solid var(--border-color);
+            color: var(--text-main);
+        }
+        .mission-item.completed {
+            border-left-color: var(--gold);
+            background: rgba(245, 158, 11, 0.1); /* Tint of gold */
+        }
+        .mission-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px; /* Increased */
+            font-weight: bold;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+        .mission-progress-bg {
+            height: 8px; /* Increased height */
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .mission-progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .mission-reward { font-size: 12px; color: var(--gold); font-weight: bold; } /* Increased */
+
+        /* ECO STORE & BADGES */
+        .section-title { text-align: left; font-size: 18px; font-weight: bold; margin: 25px 0 12px 0; color: var(--text-main); } /* Increased */
+        
+        .forest-container {
+            background: var(--bg-card); padding: 15px; border-radius: 15px;
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+            min-height: 80px; align-items: center;
+            border: 1px solid var(--border-color);
+        }
+        .tree-icon { font-size: 28px; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); } /* Increased */
+        
+        .buy-btn {
+            background: var(--secondary); color: white; border: none; padding: 12px 15px; /* Increased padding */
+            border-radius: 20px; font-size: 14px; margin-top: 10px; cursor: pointer; width: 100%; /* Increased font */
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+        .buy-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .badges-grid { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; }
+        .badge {
+            background: var(--bg-card); border: 2px solid var(--border-color); border-radius: 50%;
+            width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; /* Increased size */
+            font-size: 32px; flex-shrink: 0; position: relative; opacity: 0.5; filter: grayscale(1); /* Increased font */
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .badge.unlocked { opacity: 1; filter: grayscale(0); border-color: var(--gold); transform: scale(1.05); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3); }
+        .badge-label { font-size: 12px; text-align: center; margin-top: 5px; color: var(--text-muted); } /* Increased */
+
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+
+        .big-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px; /* Increased */
+            border-radius: 30px;
+            margin-top: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            width: 100%;
+            font-weight: bold;
+        }
+
+        /* --- SORT SCREEN --- */
+        .search-box {
+            width: 90%;
+            padding: 14px; /* Increased padding */
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-main);
+            margin: 0 auto 20px auto;
+            display: block;
+            font-size: 16px; /* Increased */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding-bottom: 20px;
+        }
+        .item-btn {
+            background: var(--bg-card);
+            border: none;
+            padding: 20px; /* Increased padding */
+            border-radius: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .item-btn:active { transform: scale(0.96); }
+        .emoji { font-size: 42px; } /* Increased */
+        .label { font-weight: 600; color: var(--text-main); font-size: 15px; } /* Increased */
+
+        /* WIZARD STYLES */
+        .wizard-btn {
+            background: #374151; /* Dark Grey */
+            color: white;
+            width: 100%;
+            padding: 14px; /* Increased padding */
+            border-radius: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+            font-size: 15px; /* Increased */
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        /* MODAL STYLES (Shared) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 200;
+            display: none;
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            color: var(--text-main);
+            width: 85%;
+            max-width: 350px;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            animation: fadeIn 0.3s;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .wizard-option {
+            display: block;
+            width: 100%;
+            padding: 15px; /* Increased padding */
+            margin: 10px 0;
+            background: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px; /* Increased */
+        }
+        .wizard-option:hover { opacity: 0.9; }
+        
+        /* Custom Buttons for Modals */
+        .modal-btn {
+            border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer;
+            font-weight: bold; font-size: 15px; min-width: 90px; /* Increased */
+        }
+        .modal-btn.primary { background: var(--primary); color: white; }
+        .modal-btn.secondary { background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border-color); }
+        .modal-btn:hover { opacity: 0.9; }
+
+        /* --- RESULT CARD --- */
+        #result-card {
+            display: none;
+            background: var(--bg-card);
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1);
+            border-left: 6px solid var(--primary);
+        }
+        
+        /* Allocation Section */
+        .bin-visual {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            background: var(--bg-input);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .bin-icon { font-size: 36px; } /* Increased */
+        .bin-text { font-weight: bold; font-size: 18px; color: var(--text-main); } /* Increased */
+        
+        .warning-box { background: #fef2f2; border-left: 4px solid var(--danger); padding: 12px; margin: 12px 0; border-radius: 6px; font-size: 14px; color: #991b1b; line-height: 1.4; } /* Increased */
+        .impact-box { background: #f0fdf4; border-left: 4px solid var(--primary); padding: 12px; margin: 12px 0; border-radius: 6px; font-size: 14px; color: #065f46; line-height: 1.4; } /* Increased */
+
+        .opt-checklist { margin: 15px 0; text-align: left; background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; }
+        .opt-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 15px; cursor: pointer; color: var(--text-main); } /* Increased */
+        .opt-item input { cursor: pointer; accent-color: var(--primary); width: 18px; height: 18px; } /* Increased checkbox size */
+
+        .points-btn { background: var(--gold); color: white; border: none; padding: 14px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; animation: pulse 2s infinite; } /* Increased */
+
+        /* --- WEALTH SCREEN --- */
+        .inventory-bar {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 15px; /* Increased */
+            color: var(--text-muted);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .inv-item { display: inline-block; background: var(--bg-input); padding: 6px 12px; border-radius: 15px; margin: 3px; font-weight: bold; color: var(--text-main); font-size: 14px; } /* Increased */
+
+        .wealth-card {
+            background: var(--bg-card);
+            padding: 18px; /* Increased padding */
+            border-radius: 12px;
+            margin-bottom: 18px;
+            border-left: 5px solid var(--secondary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+            transition: all 0.3s;
+            color: var(--text-main);
+        }
+        
+        .step-container {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-color);
+            display: none; /* Hidden initially */
+        }
+        
+        .diy-step {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            opacity: 0; /* Hidden until animation runs */
+            transform: translateX(-10px);
+        }
+        
+        .diy-step.animate-visible {
+            animation: slideInRight 0.5s ease-out forwards;
+        }
+        
+        .step-num {
+            background: var(--secondary);
+            color: white;
+            width: 24px; /* Increased */
+            height: 24px; /* Increased */
+            border-radius: 50%;
+            text-align: center;
+            font-size: 14px; /* Increased */
+            line-height: 24px;
+            flex-shrink: 0;
+        }
+        
+        .step-text { font-size: 15px; color: var(--text-main); line-height: 1.5; } /* Increased */
+
+        .toggle-steps-btn {
+            background: none; border: none; color: var(--secondary);
+            font-size: 14px; font-weight: bold; cursor: pointer; /* Increased */
+            padding: 0; margin-top: 8px; text-decoration: underline;
+        }
+
+        .done-btn { background: rgba(59, 130, 246, 0.1); color: var(--secondary); border: 1px solid var(--secondary); padding: 8px 15px; border-radius: 15px; font-size: 14px; margin-top: 12px; cursor: pointer; width: 100%; font-weight: bold; } /* Increased */
+
+        /* Animations */
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* --- QUANTUM LAB --- */
+        .lab-box { background: var(--bg-card); padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; color: var(--text-main); }
+        .analyze-btn { background: var(--accent); color: white; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; } /* Increased */
+        
+        /* PLAN STYLES */
+        .plan-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-left: 5px solid #ccc;
+            color: var(--text-main);
+        }
+        .plan-title { font-weight: bold; margin-bottom: 8px; display: block; font-size: 17px; } /* Increased */
+        .plan-desc { font-size: 15px; color: var(--text-muted); line-height: 1.6; } /* Increased */
+        .plan-tag {
+            display: inline-block; padding: 4px 10px; border-radius: 12px; 
+            font-size: 12px; font-weight: bold; margin-right: 5px; background: var(--bg-input); /* Increased */
+        }
+
+        /* --- BOTTOM NAVIGATION --- */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; justify-content: space-around; padding: 15px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100; border-top: 1px solid var(--border-color); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #9ca3af; font-size: 12px; cursor: pointer; background: none; border: none; } /* Increased font */
+        .nav-item.active-nav { color: var(--primary); font-weight: bold; }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; } /* Increased size */
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* QUANTUM LOADER */
+        .quantum-loader {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .quantum-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--accent);
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .quantum-text {
+            margin-top: 10px;
+            font-size: 14px;
+            color: var(--accent);
+            font-weight: bold;
+            font-family: monospace;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <!-- APP CONTENT AREA -->
+    <div id="app-container">
+
+        <!-- === SCREEN 1: HOME === -->
+        <div id="screen-home" class="screen active">
+            <div class="header">
+                <h1>EcoSort AI</h1>
+                <p>Quantum Waste Analysis System</p>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+
+            <div class="home-hero">
+                <div style="font-size: 60px;">♻️</div> <!-- Increased -->
+                
+                <div class="score-board">
+                    <span>🏆 Karma Points</span>
+                    <span class="score-val" id="display-score">0</span>
+                </div>
+
+                <!-- DYNAMIC DAILY CHALLENGES (3 Items) -->
+                <div class="daily-challenge-box">
+                    <strong style="color: var(--primary); font-size: 16px;">📅 Today's Quests</strong>
+                    <div id="mission-list" style="margin-top: 12px;">
+                        <!-- Missions injected via JS -->
+                    </div>
+                </div>
+
+                <!-- ECO STORE (USE POINTS) -->
+                <div class="section-title">🌲 Your Virtual Forest (Use Points)</div>
+                <div class="forest-container" id="forest-area">
+                    <span style="font-size:14px; color:var(--text-muted);">No trees planted yet.</span>
+                </div>
+                <button id="buy-tree-btn" type="button" class="buy-btn" onclick="plantTree()">🌱 Plant a Tree (Cost: 100 pts)</button>
+
+                <!-- BADGES -->
+                <div class="section-title">🎖️ Your Badges (Click for info)</div>
+                <div class="badges-grid">
+                    <!-- SCORE BADGES -->
+                    <div style="text-align:center;">
+                        <div id="badge-1" class="badge" onclick="showBadgeInfo('badge-1')">🌱</div>
+                        <div class="badge-label">Novice</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div id="badge-2" class="badge" onclick="showBadgeInfo('badge-2')">🌿</div>
+                        <div class="badge-label">Guardian</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div id="badge-3" class="badge" onclick="showBadgeInfo('badge-3')">🌳</div>
+                        <div class="badge-label">Hero</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div id="badge-4" class="badge" onclick="showBadgeInfo('badge-4')">🌍</div>
+                        <div class="badge-label">Legend</div>
+                    </div>
+                    <!-- TREE BADGES -->
+                    <div style="text-align:center;">
+                        <div id="badge-tree-1" class="badge" onclick="showBadgeInfo('badge-tree-1')">🌻</div>
+                        <div class="badge-label">Planter</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div id="badge-tree-5" class="badge" onclick="showBadgeInfo('badge-tree-5')">🌲</div>
+                        <div class="badge-label">Forest</div>
+                    </div>
+                     <div style="text-align:center;">
+                        <div id="badge-tree-10" class="badge" onclick="showBadgeInfo('badge-tree-10')">🏞️</div>
+                        <div class="badge-label">Carbon0</div>
+                    </div>
+                </div>
+
+                <button class="big-btn" onclick="switchScreen('screen-sort')">Start Sorting ➜</button>
+            </div>
+        </div>
+
+        <!-- === SCREEN 2: SORTING (The AI) === -->
+        <div id="screen-sort" class="screen">
+            <div class="header">
+                <h1>Quantum Scanner</h1>
+                <p>Optimize & Allocate Waste</p>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+
+            <input type="text" class="search-box" id="search-input" placeholder="🔍 Search waste (e.g., bottle)..." onkeyup="filterGrid()">
+
+            <div class="grid" id="waste-grid">
+                <button class="item-btn" data-name="plastic bottle" onclick="analyzeWaste('plastic')">
+                    <span class="emoji">🥤</span><span class="label">Bottle</span>
+                </button>
+                <button class="item-btn" data-name="banana peel" onclick="analyzeWaste('banana')">
+                    <span class="emoji">🍌</span><span class="label">Peel</span>
+                </button>
+                <button class="item-btn" data-name="battery" onclick="analyzeWaste('battery')">
+                    <span class="emoji">🔋</span><span class="label">Battery</span>
+                </button>
+                <button class="item-btn" data-name="pizza box" onclick="analyzeWaste('pizza')">
+                    <span class="emoji">🍕</span><span class="label">Pizza Box</span>
+                </button>
+                <button class="item-btn" data-name="glass jar" onclick="analyzeWaste('glass')">
+                    <span class="emoji">🫙</span><span class="label">Glass</span>
+                </button>
+                <button class="item-btn" data-name="newspaper" onclick="analyzeWaste('paper')">
+                    <span class="emoji">📰</span><span class="label">Paper</span>
+                </button>
+                <button class="item-btn" data-name="chips packet" onclick="analyzeWaste('chips')">
+                    <span class="emoji">🥡</span><span class="label">Chips</span>
+                </button>
+                <button class="item-btn" data-name="metal can" onclick="analyzeWaste('metal')">
+                    <span class="emoji">🥫</span><span class="label">Can</span>
+                </button>
+            </div>
+
+            <button class="wizard-btn" onclick="startWizard()">
+                <span>❓ Unsure? Smart Sort Wizard</span>
+            </button>
+
+            <div id="scanner" style="display:none; text-align: center; margin-top: 20px;">
+                <div style="font-size: 50px; animation: spin 1s infinite;">🔄</div>
+                <p style="font-size: 16px;">Analyzing & Optimizing...</p>
+            </div>
+
+            <div id="result-card">
+                <div id="bin-display" class="bin-visual">
+                    <div id="bin-icon" class="bin-icon">🗑️</div>
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted); letter-spacing: 1px;">ALLOCATION TARGET</div>
+                        <div id="bin-name" class="bin-text">General Bin</div>
+                    </div>
+                </div>
+
+                <div id="res-action" style="font-size: 24px; font-weight: 800; color: var(--text-main); margin: 10px 0;">Action</div>
+                
+                <div id="warning-box" class="warning-box">
+                    ⚠️ <strong>Common Mistake:</strong> <span id="mistake-text">...</span>
+                </div>
+                
+                <div id="impact-box" class="impact-box">
+                    🚀 <strong>Efficiency Impact:</strong> <span id="impact-text">...</span>
+                </div>
+
+                <div class="opt-checklist">
+                    <strong style="font-size:14px; color:var(--text-muted); text-transform: uppercase;">Optimization Checklist:</strong>
+                    <div id="checklist-container" style="margin-top:8px;"></div>
+                </div>
+                
+                <button class="points-btn" id="claim-btn" onclick="claimPoints()">⭐ Verify & Claim 10 Points</button>
+            </div>
+        </div>
+
+        <!-- WIZARD MODAL -->
+        <div id="wizard-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h3 id="wiz-question" style="margin-top:0; font-size: 20px;">Is it Food or Plant?</h3>
+                <div id="wiz-options">
+                    <!-- Options injected via JS -->
+                </div>
+                <button onclick="closeWizard()" style="background:none; border:none; color:var(--text-muted); margin-top:15px; cursor:pointer; font-size:14px;">Cancel</button>
+            </div>
+        </div>
+
+        <!-- INFO MODAL (For Badges) -->
+        <div id="info-modal" class="modal-overlay">
+            <div class="modal-content" style="border-top: 5px solid var(--gold);">
+                <div id="info-icon" style="font-size:50px; margin-bottom:15px;">🏆</div>
+                <h3 id="info-title" style="margin-top:0; font-size: 22px;">Title</h3>
+                <p id="info-desc" style="font-size:16px; color:var(--text-muted); line-height:1.5;">Description</p>
+                <p id="info-status" style="font-size:14px; font-weight:bold; color:var(--primary); margin-top:12px;">Status</p>
+                <button onclick="document.getElementById('info-modal').style.display='none'" class="modal-btn secondary" style="margin-top:20px;">Close</button>
+            </div>
+        </div>
+        
+        <!-- GENERIC ALERT/CONFIRM MODAL -->
+        <div id="custom-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div id="modal-icon" style="font-size:50px; margin-bottom:15px;">✨</div>
+                <h3 id="modal-title" style="margin-top:0; font-size: 22px;">Title</h3>
+                <p id="modal-msg" style="font-size:16px; color:var(--text-muted); line-height:1.5; margin-bottom:25px;">Message</p>
+                <div style="display:flex; gap:15px; justify-content:center;">
+                    <button id="modal-cancel" class="modal-btn secondary" onclick="closeCustomModal()">Cancel</button>
+                    <button id="modal-confirm" class="modal-btn primary" onclick="closeCustomModal()">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- === SCREEN 3: WEALTH IDEAS === -->
+        <div id="screen-wealth" class="screen">
+            <div class="header">
+                <h1>Waste to Wealth</h1>
+                <p>Unlock Projects with Collected Items</p>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+
+            <div class="inventory-bar">
+                <strong>📦 Your Inventory:</strong><br>
+                <div id="inventory-list" style="margin-top:8px;">
+                    <span style="font-size:14px; font-style:italic;">Sort items to see them here...</span>
+                </div>
+            </div>
+
+            <div id="diy-container">
+                <div style="text-align:center; color:var(--text-muted); margin-top:30px;">
+                    <p>Sort items in the Scanner to unlock specific recycling ideas!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- === SCREEN 4: QUANTUM LAB (Plan) === -->
+        <div id="screen-tips" class="screen">
+            <div class="header">
+                <h1>Quantum Lab</h1>
+                <p>Quantum Optimization Engine
+                    <span onclick="showCustomAlert('Why Quantum?', 'This engine simulates quantum algorithms to solve complex waste sorting problems (like the Traveling Salesman Problem) by finding the most efficient path to zero waste.', '⚛️')" style="cursor:pointer; font-size:14px;">ℹ️</span>
+                </p>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+
+            <div class="lab-box">
+                <h3 style="margin-top:0; font-size: 18px;">📋 Your Daily Recycling Plan</h3>
+                <p style="font-size:14px; color: var(--text-muted); margin-bottom: 20px;">AI-generated workflow for your specific daily haul.</p>
+                
+                <div id="quantum-loader" class="quantum-loader">
+                    <div class="quantum-spinner"></div>
+                    <div id="quantum-text" class="quantum-text">Initializing Qubits...</div>
+                </div>
+
+                <div id="plan-container">
+                    <div style="text-align:center; padding: 25px; background: var(--bg-input); border-radius: 10px; color: var(--text-muted);">
+                        <p style="font-size: 16px;">No items scanned yet.</p>
+                        <p style="font-size:14px;">Go to the <strong>Sort</strong> tab to add items.</p>
+                    </div>
+                </div>
+                
+                <button class="analyze-btn" style="margin-top: 20px;" onclick="generateDailyPlan()">🔄 Run Quantum Optimization</button>
+            </div>
+
+            <div class="lab-box">
+                <h3 style="margin-top:0; font-size: 16px;">Allocation Summary</h3>
+                 <div id="allocation-stats" style="font-size:14px; color:var(--text-muted);">
+                     Scanned items will appear here categorized by bin.
+                 </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <nav class="bottom-nav">
+        <button class="nav-item active-nav" onclick="switchScreen('screen-home', this)">
+            <span class="nav-icon">🏠</span><span>Home</span>
+        </button>
+        <button class="nav-item" onclick="switchScreen('screen-sort', this)">
+            <span class="nav-icon">♻️</span><span>Sort</span>
+        </button>
+        <button class="nav-item" onclick="switchScreen('screen-wealth', this)">
+            <span class="nav-icon">💡</span><span>Ideas</span>
+        </button>
+        <button class="nav-item" onclick="switchScreen('screen-tips', this)">
+            <span class="nav-icon">⚡</span><span>Plan</span>
+        </button>
+    </nav>
+
+    <script>
+        /* --- JAVASCRIPT LOGIC --- */
+        
+        let totalScore = 0;
+        let inventory = {};
+        let currentScanningItem = null;
+        let treesPlanted = 0;
+        let isDarkMode = false;
+        let confirmCallback = null;
+
+        // Theme Toggle Logic
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+            
+            const btns = document.querySelectorAll('.theme-toggle');
+            btns.forEach(btn => btn.textContent = isDarkMode ? '☀️' : '🌙');
+        }
+
+        // NEW: Mission Database
+        const missions = [
+            { text: "🌊 Ocean Cleaner: Sort any 5 items", target: 5, type: 'any', bonus: 100 },
+            { text: "🥤 Plastic Patroller: Recycle 3 Plastic Bottles", target: 3, type: 'plastic', bonus: 150 },
+            { text: "📰 Paper Saver: Recycle 2 Paper items", target: 2, type: 'paper', bonus: 120 },
+            { text: "🔋 Hazmat Hero: Dispose of 1 Battery safely", target: 1, type: 'battery', bonus: 200 },
+            { text: "🥫 Metal Master: Recycle 2 Metal Cans", target: 2, type: 'metal', bonus: 130 },
+            { text: "🍌 Soil Feeder: Compost 2 Banana Peels", target: 2, type: 'banana', bonus: 110 },
+            { text: "🍕 Grease Fighter: Handle 1 Pizza Box", target: 1, type: 'pizza', bonus: 100 },
+            { text: "🥡 Snack Attack: Trash 2 Chips Packets", target: 2, type: 'chips', bonus: 90 }
+        ];
+
+        // Badge Database
+        const badges = {
+            'badge-1': { title: "Novice Recycler", desc: "Earn 50 Karma Points to unlock.", req: 50, type: 'score', icon: "🌱" },
+            'badge-2': { title: "Earth Guardian", desc: "Earn 100 Karma Points to unlock.", req: 100, type: 'score', icon: "🌿" },
+            'badge-3': { title: "Eco Hero", desc: "Earn 300 Karma Points to unlock.", req: 300, type: 'score', icon: "🌳" },
+            'badge-4': { title: "Sustainability Legend", desc: "Earn 500 Karma Points to unlock.", req: 500, type: 'score', icon: "🌍" },
+            'badge-tree-1': { title: "Sapling Starter", desc: "Plant your 1st virtual tree.", req: 1, type: 'tree', icon: "🌻" },
+            'badge-tree-5': { title: "Forest Creator", desc: "Plant 5 virtual trees.", req: 5, type: 'tree', icon: "🌲" },
+            'badge-tree-10': { title: "Carbon Net-Zero", desc: "Plant 10 virtual trees.", req: 10, type: 'tree', icon: "🏞️" }
+        };
+
+        // Challenge State (Array for 3 missions)
+        let activeMissions = [];
+
+        // Init
+        window.onload = function() {
+            initDailyChallenge();
+            updateHomeUI();
+        }
+
+        function initDailyChallenge() {
+            // Pick 3 unique random missions
+            const shuffled = missions.sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 3);
+            
+            activeMissions = selected.map(m => ({
+                ...m,
+                current: 0,
+                completed: false
+            }));
+        }
+
+        // 1. Navigation
+        function switchScreen(screenId, navBtnElement) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (navBtnElement) {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active-nav'));
+                navBtnElement.classList.add('active-nav');
+            } else if (screenId === 'screen-sort') {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active-nav'));
+                document.querySelectorAll('.nav-item')[1].classList.add('active-nav');
+            }
+            if(screenId === 'screen-wealth') renderWealthScreen();
+            // Note: Plan is now generated manually by button click to show animation
+            if(screenId === 'screen-home') updateHomeUI();
+        }
+
+        // 2. Waste Data
+        const wasteData = {
+            plastic: { 
+                action: "♻️ RECYCLE", color: "#10b981", binName: "Blue Bin (Dry)", binIcon: "🔵",
+                prep: ["Rinse Liquid", "Crush Bottle", "Keep Cap On"],
+                mistake: "Throwing in half-full bottles.", impact: "Crushing saves 80% of truck space."
+            },
+            banana: { 
+                action: "🍂 COMPOST", color: "#f59e0b", binName: "Green Bin (Wet)", binIcon: "🟢",
+                prep: ["Remove Sticker", "Chop small"],
+                mistake: "Putting in plastic bag.", impact: "Turns to soil in 2 weeks if chopped."
+            },
+            battery: { 
+                action: "⚠️ HAZARDOUS", color: "#ef4444", binName: "Red Bin (Hazard)", binIcon: "🔴",
+                prep: ["Tape Ends", "Store separately"],
+                mistake: "Throwing in regular dustbin.", impact: "Prevents toxic soil poisoning."
+            },
+            pizza: { 
+                action: "🍕 COMPLEX", color: "#8b5cf6", binName: "Check Condition!", binIcon: "🟣",
+                prep: ["Remove Leftovers", "Tear off grease"],
+                mistake: "Recycling greasy paper.", impact: "One greasy box ruins an entire pulp batch."
+            },
+            glass: { 
+                action: "🔄 REUSE / RECYCLE", color: "#10b981", binName: "Blue Bin (Dry)", binIcon: "🔵",
+                prep: ["Rinse Jar", "Remove Lid"],
+                mistake: "Breaking the glass.", impact: "Intact glass is easier to sort by color."
+            },
+            paper: { 
+                action: "♻️ RECYCLE", color: "#10b981", binName: "Blue Bin (Dry)", binIcon: "🔵",
+                prep: ["Remove Staples", "Keep Dry"],
+                mistake: "Recycling wet/dirty paper.", impact: "Dry paper ensures high-quality recycled fibers."
+            },
+            chips: { 
+                action: "❌ NOT RECYCLABLE", color: "#ef4444", binName: "Trash (Landfill)", binIcon: "🗑️",
+                prep: ["Flatten", "Put in Eco-Brick"],
+                mistake: "Putting in Blue Bin.", impact: "Multi-layer plastic cannot be separated easily."
+            },
+            metal: { 
+                action: "♻️ RECYCLE", color: "#10b981", binName: "Blue Bin (Dry)", binIcon: "🔵",
+                prep: ["Rinse Clean", "Crush"],
+                mistake: "Leaving food inside.", impact: "Metals can be recycled infinitely."
+            }
+        };
+
+        // WIZARD DATA
+        const wizardSteps = {
+            start: { q: "Is the item organic (Food or Plant)?", opts: [{ txt: "Yes (Peels, Scraps)", next: "finish_compost" }, { txt: "No (Man-made)", next: "electronics" }] },
+            electronics: { q: "Is it electronic, battery, or sharp?", opts: [{ txt: "Yes (Wires, Bulb, Razor)", next: "finish_hazard" }, { txt: "No", next: "paper" }] },
+            paper: { q: "Is it made of Paper or Cardboard?", opts: [{ txt: "Yes", next: "paper_clean" }, { txt: "No", next: "plastic" }] },
+            paper_clean: { q: "Is the paper Clean & Dry?", opts: [{ txt: "Yes (Newspaper, Box)", next: "finish_paper" }, { txt: "No (Greasy, Wet)", next: "finish_compost_dirty" }] },
+            plastic: { q: "Is it Plastic, Glass or Metal?", opts: [{ txt: "Yes, Rigid/Hard", next: "finish_recycle" }, { txt: "Yes, Thin Wrapper/Packet", next: "finish_trash" }, { txt: "Not sure / Mixed", next: "finish_trash" }] }
+        };
+
+        const diyProjects = {
+            plastic: { title: "🥤 Plastic Bottle Pen Stand", desc: "Upcycle a bottle into a desk organizer.", steps: ["Clean bottle.", "Cut in half.", "Smooth edges.", "Decorate!"] },
+            banana: { title: "🍌 Banana Peel Fertilizer", desc: "Create 'Liquid Gold' for plants.", steps: ["Chop peels.", "Soak in water 3 days.", "Strain.", "Pour on soil."] },
+            chips: { title: "🧱 Eco-Brick Construction", desc: "Turn wrappers into building blocks.", steps: ["Find 1L bottle.", "Wash/dry packets.", "Stuff tightly.", "Compress."] },
+            metal: { title: "🕯️ Tin Can Lantern", desc: "Make a beautiful light holder.", steps: ["Fill can w/ water & freeze.", "Hammer holes.", "Melt ice.", "Place candle."] },
+            paper: { title: "🌱 Newspaper Seed Pots", desc: "Biodegradable pots for gardening.", steps: ["Cut paper strips.", "Wrap around glass.", "Fold bottom.", "Fill & plant."] }
+        };
+
+        // 3. Logic Functions
+        function filterGrid() {
+            const input = document.getElementById('search-input').value.toLowerCase();
+            const buttons = document.getElementsByClassName('item-btn');
+            for (let btn of buttons) {
+                const name = btn.getAttribute('data-name');
+                btn.style.display = name.includes(input) ? "flex" : "none";
+            }
+        }
+
+        function analyzeWaste(type) {
+            const card = document.getElementById('result-card');
+            const scanner = document.getElementById('scanner');
+            const checklistDiv = document.getElementById('checklist-container');
+            currentScanningItem = type; 
+
+            card.style.display = 'none';
+            scanner.style.display = 'block';
+            checklistDiv.innerHTML = ''; 
+
+            setTimeout(() => {
+                scanner.style.display = 'none';
+                const data = wasteData[type];
+                
+                document.getElementById('res-action').textContent = data.action;
+                document.getElementById('bin-name').textContent = data.binName;
+                document.getElementById('bin-icon').textContent = data.binIcon;
+                document.getElementById('bin-name').style.color = data.color;
+                document.getElementById('mistake-text').textContent = data.mistake;
+                document.getElementById('impact-text').textContent = data.impact;
+
+                data.prep.forEach(step => {
+                    const div = document.createElement('div');
+                    div.className = 'opt-item';
+                    div.innerHTML = `<input type="checkbox" onchange="checkPrep(this)"> <span>${step}</span>`;
+                    checklistDiv.appendChild(div);
+                });
+
+                card.style.borderLeftColor = data.color;
+                card.style.display = 'block';
+                
+                const btn = document.getElementById('claim-btn');
+                btn.disabled = false;
+                btn.innerText = "⭐ Verify & Claim 10 Points";
+                btn.style.background = "var(--gold)";
+            }, 600);
+        }
+
+        // WIZARD LOGIC
+        function startWizard() { document.getElementById('wizard-modal').style.display = 'flex'; renderWizardStep('start'); }
+        function closeWizard() { document.getElementById('wizard-modal').style.display = 'none'; }
+        function renderWizardStep(stepKey) {
+            if(stepKey.startsWith('finish')) { resolveWizard(stepKey); return; }
+            const data = wizardSteps[stepKey];
+            document.getElementById('wiz-question').textContent = data.q;
+            const optsContainer = document.getElementById('wiz-options');
+            optsContainer.innerHTML = '';
+            data.opts.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'wizard-option';
+                btn.textContent = opt.txt;
+                btn.onclick = () => renderWizardStep(opt.next);
+                optsContainer.appendChild(btn);
+            });
+        }
+        function resolveWizard(resultKey) {
+            closeWizard();
+            let type = '';
+            if(resultKey === 'finish_compost') type = 'banana';
+            else if(resultKey === 'finish_compost_dirty') type = 'banana';
+            else if(resultKey === 'finish_hazard') type = 'battery';
+            else if(resultKey === 'finish_paper') type = 'paper';
+            else if(resultKey === 'finish_recycle') type = 'plastic';
+            else if(resultKey === 'finish_trash') type = 'chips';
+            analyzeWaste(type);
+            setTimeout(() => {
+                document.getElementById('res-action').textContent = "✨ WIZARD RESULT";
+                document.getElementById('impact-text').textContent = "AI Optimization: Decision tree prevented contamination.";
+            }, 610);
+        }
+
+        function checkPrep(checkbox) {
+            const checked = checkbox.checked;
+            checkbox.parentElement.style.textDecoration = checked ? "line-through" : "none";
+            checkbox.parentElement.style.opacity = checked ? "0.6" : "1";
+        }
+
+        function claimPoints() {
+            addPoints(10);
+            if(currentScanningItem) {
+                if(!inventory[currentScanningItem]) inventory[currentScanningItem] = 0;
+                inventory[currentScanningItem]++;
+                updateInventoryUI();
+                
+                // Update Challenge Progress with Type Check
+                updateChallengeProgress(1, currentScanningItem);
+            }
+
+            const btn = document.getElementById('claim-btn');
+            btn.innerText = "✅ Verified & Claimed!";
+            btn.disabled = true;
+            btn.style.background = "#9ca3af";
+        }
+
+        function addPoints(amount) {
+            totalScore += amount;
+            document.getElementById('display-score').textContent = totalScore;
+            updateHomeUI(); // Check for badges
+        }
+
+        // --- GAMIFICATION LOGIC ---
+
+        function updateHomeUI() {
+            // 1. Update Badge State
+            // Score Badges
+            if (totalScore >= 50) unlockBadge('badge-1');
+            if (totalScore >= 100) unlockBadge('badge-2');
+            if (totalScore >= 300) unlockBadge('badge-3');
+            if (totalScore >= 500) unlockBadge('badge-4');
+            
+            // Tree Badges
+            if (treesPlanted >= 1) unlockBadge('badge-tree-1');
+            if (treesPlanted >= 5) unlockBadge('badge-tree-5');
+            if (treesPlanted >= 10) unlockBadge('badge-tree-10');
+
+            // 2. Update Missions List (New Logic)
+            const missionList = document.getElementById('mission-list');
+            missionList.innerHTML = '';
+            
+            activeMissions.forEach((mission) => {
+                const pct = (mission.current / mission.target) * 100;
+                const isDone = mission.completed;
+                
+                const div = document.createElement('div');
+                div.className = `mission-item ${isDone ? 'completed' : ''}`;
+                div.innerHTML = `
+                    <div class="mission-header">
+                        <span>${isDone ? '✅ ' : ''}${mission.text}</span>
+                        <span>${mission.current}/${mission.target}</span>
+                    </div>
+                    <div class="mission-progress-bg">
+                        <div class="mission-progress-fill" style="width: ${Math.min(pct, 100)}%"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-top:5px;">
+                        <span class="mission-reward">Reward: ${mission.bonus} pts</span>
+                        ${isDone ? '<span style="font-size:12px; color:#10b981; font-weight:bold;">Completed</span>' : ''}
+                    </div>
+                `;
+                missionList.appendChild(div);
+            });
+
+            // 3. Update Tree Button
+            document.getElementById('buy-tree-btn').disabled = totalScore < 100;
+            document.getElementById('buy-tree-btn').textContent = totalScore < 100 ? `🌱 Plant a Tree (Need ${100 - totalScore} more pts)` : `🌱 Plant a Tree (Cost: 100 pts)`;
+        }
+
+        function unlockBadge(id) {
+            document.getElementById(id).classList.add('unlocked');
+        }
+        
+        // NEW: Badge Details Modal
+        function showBadgeInfo(id) {
+            const badge = badges[id];
+            const isUnlocked = document.getElementById(id).classList.contains('unlocked');
+            
+            document.getElementById('info-icon').textContent = badge.icon;
+            document.getElementById('info-title').textContent = badge.title;
+            document.getElementById('info-desc').textContent = badge.desc;
+            
+            const statusElem = document.getElementById('info-status');
+            
+            let currentVal = badge.type === 'tree' ? treesPlanted : totalScore;
+            let needed = Math.max(0, badge.req - currentVal);
+            let unit = badge.type === 'tree' ? 'trees' : 'points';
+
+            if(isUnlocked) {
+                statusElem.textContent = "✅ UNLOCKED - Great job!";
+                statusElem.style.color = "var(--primary)";
+            } else {
+                statusElem.textContent = `🔒 LOCKED - Need ${needed} more ${unit}`;
+                statusElem.style.color = "#9ca3af";
+            }
+            
+            document.getElementById('info-modal').style.display = 'flex';
+        }
+
+        function updateChallengeProgress(amount, itemType) {
+            let updated = false;
+            let completedMission = null;
+            
+            activeMissions.forEach(mission => {
+                if (mission.completed) return;
+
+                // Check Mission Logic
+                let matches = false;
+                if (mission.type === 'any') {
+                    matches = true;
+                } else if (mission.type === itemType) {
+                    matches = true;
+                }
+
+                if (matches) {
+                    mission.current += amount;
+                    if (mission.current >= mission.target) {
+                        mission.current = mission.target;
+                        mission.completed = true;
+                        addPoints(mission.bonus); // Dynamic Bonus
+                        completedMission = mission;
+                    }
+                    updated = true;
+                }
+            });
+            
+            if(updated) {
+                updateHomeUI();
+                if(completedMission) {
+                     showCustomAlert("Mission Complete!", `🎉 You completed: "${completedMission.text}"\nReward: +${completedMission.bonus} Points!`, "🏆");
+                }
+            }
+        }
+
+        function plantTree() {
+            if (totalScore >= 100) {
+                totalScore -= 100;
+                document.getElementById('display-score').textContent = totalScore;
+                treesPlanted++;
+                
+                const forest = document.getElementById('forest-area');
+                if(treesPlanted === 1) forest.innerHTML = ''; 
+                
+                const tree = document.createElement('span');
+                tree.className = 'tree-icon';
+                tree.textContent = '🌲';
+                forest.appendChild(tree);
+                
+                updateHomeUI();
+                
+                const btn = document.getElementById('buy-tree-btn');
+                btn.innerText = "✅ Planted!";
+                btn.style.background = "#10b981";
+                setTimeout(() => {
+                    updateHomeUI(); 
+                    btn.style.background = "";
+                }, 1500);
+            }
+        }
+
+        function updateInventoryUI() {
+            const list = document.getElementById('inventory-list');
+            list.innerHTML = '';
+            for (const [item, count] of Object.entries(inventory)) {
+                const span = document.createElement('span');
+                span.className = 'inv-item';
+                span.textContent = `${count}x ${item.charAt(0).toUpperCase() + item.slice(1)}`;
+                list.appendChild(span);
+            }
+        }
+
+        function renderWealthScreen() {
+            const container = document.getElementById('diy-container');
+            container.innerHTML = '';
+            let hasProjects = false;
+
+            for (const [itemType, count] of Object.entries(inventory)) {
+                if (diyProjects[itemType] && count > 0) {
+                    hasProjects = true;
+                    const proj = diyProjects[itemType];
+                    const card = document.createElement('div');
+                    card.className = 'wealth-card';
+                    let stepsHtml = '';
+                    proj.steps.forEach((step, index) => {
+                        stepsHtml += `<div class="diy-step" style="animation-delay: ${index * 0.2}s"><div class="step-num">${index+1}</div><div class="step-text">${step}</div></div>`;
+                    });
+
+                    card.innerHTML = `<div style="font-weight:bold;color:var(--secondary);font-size:16px;">${proj.title}</div><p style="font-size:13px;color:var(--text-muted);margin:5px 0;">${proj.desc}</p><button class="toggle-steps-btn" onclick="toggleSteps(this)">Show Steps & Animation 🎬</button><div class="step-container">${stepsHtml}<button class="done-btn" onclick="completeWealthTask(this)">✅ I built this (+50 pts)</button></div>`;
+                    container.appendChild(card);
+                }
+            }
+            if (!hasProjects) {
+                container.innerHTML = `<div style="text-align:center;padding:20px;background:var(--bg-card);border-radius:12px;color:var(--text-muted);border:1px solid var(--border-color);"><div style="font-size:40px;">🔒</div><p><strong>No Ideas Unlocked Yet!</strong></p><p style="font-size:13px;">Sort items first!</p></div>`;
+            }
+        }
+
+        function toggleSteps(btn) {
+            const container = btn.nextElementSibling;
+            if (container.style.display === "block") {
+                container.style.display = "none";
+                btn.innerText = "Show Steps & Animation 🎬";
+                const steps = container.querySelectorAll('.diy-step');
+                steps.forEach(s => s.classList.remove('animate-visible'));
+            } else {
+                container.style.display = "block";
+                btn.innerText = "Hide Steps";
+                const steps = container.querySelectorAll('.diy-step');
+                steps.forEach(s => {
+                    s.classList.remove('animate-visible');
+                    void s.offsetWidth; 
+                    s.classList.add('animate-visible');
+                });
+            }
+        }
+
+        function completeWealthTask(btn) {
+            addPoints(50);
+            btn.innerText = "🎉 Earned 50 pts!";
+            btn.disabled = true;
+        }
+        
+        // QUANTUM SIMULATION
+        function generateDailyPlan() {
+            const container = document.getElementById('plan-container');
+            const statsContainer = document.getElementById('allocation-stats');
+            const loader = document.getElementById('quantum-loader');
+            const items = Object.keys(inventory);
+            
+            if (items.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding: 20px; background: var(--bg-input); border-radius: 10px; color: var(--text-muted);"><p>No items scanned yet.</p><p style="font-size:12px;">Go to the <strong>Sort</strong> tab to add items.</p></div>`;
+                statsContainer.innerHTML = "";
+                return;
+            }
+
+            // Hide container, show loader
+            container.innerHTML = ""; 
+            statsContainer.innerHTML = "";
+            loader.style.display = "flex";
+            
+            // Simulate Quantum Calculation with changing text
+            const phrases = ["Analyzing Entropy...", "Calculating Sorting Vectors...", "Minimizing Waste Function...", "Optimizing Bin Path..."];
+            let phraseIdx = 0;
+            const textInterval = setInterval(() => {
+                document.getElementById('quantum-text').textContent = phrases[phraseIdx++ % phrases.length];
+            }, 400);
+
+            setTimeout(() => {
+                clearInterval(textInterval);
+                loader.style.display = "none";
+                
+                // RENDER PLAN
+                // Grouping Logic
+                let washables = []; let crushables = []; let hazards = []; let dry = []; let compost = []; let landfill = [];
+                let countBlue = 0; let countGreen = 0; let countRed = 0; let countBlack = 0; 
+
+                items.forEach(item => {
+                    let count = inventory[item];
+                    if(item === 'plastic' || item === 'glass' || item === 'metal') {
+                        washables.push(`${count}x ${item}`);
+                        countBlue += count;
+                    }
+                    if(item === 'plastic' || item === 'metal') {
+                        crushables.push(`${count}x ${item}`);
+                    }
+                    if(item === 'battery') {
+                        hazards.push(`${count}x ${item}`);
+                        countRed += count;
+                    }
+                    if(item === 'paper') {
+                        dry.push(`${count}x ${item}`);
+                        countBlue += count;
+                    }
+                    if(item === 'banana' || item === 'pizza') {
+                        compost.push(`${count}x ${item}`);
+                        countGreen += count;
+                    }
+                    if(item === 'chips') {
+                        landfill.push(`${count}x ${item}`);
+                        countBlack += count;
+                    }
+                });
+
+                let html = "";
+                let stepCount = 1;
+
+                if (hazards.length > 0) {
+                    html += `<div class="plan-step" style="border-left-color: var(--danger);"><span class="plan-title" style="color: var(--danger);">⚠️ Step ${stepCount++}: Isolate Hazards</span><p class="plan-desc">You have <strong>${hazards.join(', ')}</strong>. Place these in a separate box immediately.</p><div><span class="plan-tag" style="color:white; background:var(--danger);">Priority</span></div></div>`;
+                }
+                if (washables.length > 0) {
+                    html += `<div class="plan-step" style="border-left-color: var(--secondary);"><span class="plan-title" style="color: var(--secondary);">💧 Step ${stepCount++}: Washing Batch</span><p class="plan-desc">Take <strong>${washables.join(', ')}</strong> to the sink. Rinse them all together to save water.</p><div><span class="plan-tag">Efficient</span></div></div>`;
+                }
+                if (crushables.length > 0) {
+                    html += `<div class="plan-step" style="border-left-color: var(--gold);"><span class="plan-title" style="color: var(--gold);">🔨 Step ${stepCount++}: Crush & Flatten</span><p class="plan-desc">Stomp or squeeze <strong>${crushables.join(', ')}</strong>. Reduces bin volume by 80%.</p></div>`;
+                }
+                if (dry.length > 0) {
+                    html += `<div class="plan-step" style="border-left-color: var(--primary);"><span class="plan-title" style="color: var(--primary);">📄 Step ${stepCount++}: Keep Dry</span><p class="plan-desc">Stack your <strong>${dry.join(', ')}</strong> neatly. Ensure absolutely dry.</p></div>`;
+                }
+                if (compost.length > 0) {
+                    html += `<div class="plan-step" style="border-left-color: #15803d;"><span class="plan-title" style="color: #15803d;">🌱 Step ${stepCount++}: Organic Waste</span><p class="plan-desc">Take <strong>${compost.join(', ')}</strong> to the garden compost bin.</p></div>`;
+                }
+                if (landfill.length > 0) {
+                    html += `<div class="plan-step" style="border-left-color: #6b7280;"><span class="plan-title" style="color: #374151;">🗑️ Step ${stepCount++}: Non-Recyclables</span><p class="plan-desc"><strong>${landfill.join(', ')}</strong> go to general trash (Landfill).</p></div>`;
+                }
+                html += `<div class="plan-step" style="border-left-color: var(--dark);"><span class="plan-title">🏁 Step ${stepCount++}: Final Allocation</span><p class="plan-desc">Ready to bin! Check summary below.</p></div>`;
+
+                // ADDED COMPLETED BUTTON
+                html += `<button class="big-btn" style="background:var(--secondary); margin-top:20px;" onclick="completeDailyRecycling()">✅ Recycling Completed</button>`;
+
+                container.innerHTML = html;
+                statsContainer.innerHTML = `<div style="display:flex; gap:10px; flex-wrap:wrap;">${countBlue > 0 ? `<div style="background:#eff6ff; color:#1d4ed8; padding:5px 10px; border-radius:4px;">🔵 Blue Bin: ${countBlue} items</div>` : ''}${countGreen > 0 ? `<div style="background:#f0fdf4; color:#15803d; padding:5px 10px; border-radius:4px;">🟢 Green Bin: ${countGreen} items</div>` : ''}${countRed > 0 ? `<div style="background:#fef2f2; color:#b91c1c; padding:5px 10px; border-radius:4px;">🔴 Hazardous: ${countRed} items</div>` : ''}${countBlack > 0 ? `<div style="background:#f3f4f6; color:#374151; padding:5px 10px; border-radius:4px;">⚫ Trash: ${countBlack} items</div>` : ''}</div>`;
+                
+            }, 2000); // 2 Second "Thinking" Time
+        }
+
+        function completeDailyRecycling() {
+            showCustomConfirm("Complete Recycling?", "Are you sure you've finished all steps? This will clear your inventory.", () => {
+                inventory = {};
+                updateInventoryUI();
+                const container = document.getElementById('plan-container');
+                container.innerHTML = `<div style="text-align:center; padding: 20px; background: var(--bg-input); border-radius: 10px; color: var(--text-muted);"><p>No items scanned yet.</p><p style="font-size:12px;">Go to the <strong>Sort</strong> tab to add items.</p></div>`;
+                document.getElementById('allocation-stats').innerHTML = "";
+                addPoints(50);
+                showCustomAlert("Great Job!", "Inventory cleared. +50 Points!", "✅");
+            });
+        }
+
+        // CUSTOM MODAL LOGIC
+        function showCustomAlert(title, msg, icon="✨") {
+            document.getElementById('modal-icon').textContent = icon;
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-msg').textContent = msg;
+            document.getElementById('modal-cancel').style.display = 'none';
+            document.getElementById('modal-confirm').onclick = closeCustomModal;
+            document.getElementById('custom-modal').style.display = 'flex';
+        }
+
+        function showCustomConfirm(title, msg, callback) {
+            document.getElementById('modal-icon').textContent = "❓";
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-msg').textContent = msg;
+            document.getElementById('modal-cancel').style.display = 'block';
+            
+            confirmCallback = callback;
+            document.getElementById('modal-confirm').onclick = () => {
+                if(confirmCallback) confirmCallback();
+                closeCustomModal();
+            };
+            
+            document.getElementById('custom-modal').style.display = 'flex';
+        }
+
+        function closeCustomModal() {
+            document.getElementById('custom-modal').style.display = 'none';
+        }
+
+    </script>
+</body>
+</html>
